@@ -1,0 +1,821 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Almoxarifado Eletrônico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: barra lateral fixa (navegação) + área de trabalho; no celular a barra vira abas no topo. Paleta: ardósia fria + âmbar Kapton. */
+:root {
+  --bg: #F2F4F6;
+  --surface: #FFFFFF;
+  --surface-2: #F7F8FA;
+  --ink: #18202A;
+  --muted: #5B6672;
+  --line: #DCE1E7;
+  --accent: #B45F0C;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #F7E8D7;
+  --ok: #1D7549;
+  --ok-soft: #DFF2E7;
+  --warn: #8F5B00;
+  --warn-soft: #FBEFD3;
+  --crit: #B42318;
+  --crit-soft: #FBE3E0;
+  --shadow: 0 1px 2px rgba(20, 30, 45, .06), 0 4px 16px rgba(20, 30, 45, .06);
+  --f-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1419; --surface: #161C23; --surface-2: #1B222A; --ink: #E5E9EE; --muted: #94A0AC; --line: #27313B;
+    --accent: #E8953F; --accent-ink: #1A1006; --accent-soft: #3A2812;
+    --ok: #4CC38A; --ok-soft: #12301F; --warn: #E8B54C; --warn-soft: #33270C; --crit: #F2766A; --crit-soft: #3A1714;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1419; --surface: #161C23; --surface-2: #1B222A; --ink: #E5E9EE; --muted: #94A0AC; --line: #27313B;
+  --accent: #E8953F; --accent-ink: #1A1006; --accent-soft: #3A2812;
+  --ok: #4CC38A; --ok-soft: #12301F; --warn: #E8B54C; --warn-soft: #33270C; --crit: #F2766A; --crit-soft: #3A1714;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--f-body); }
+button, input, select, textarea { font: inherit; color: inherit; }
+.mono { font-family: var(--f-mono); font-size: .92em; }
+.num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100%; }
+.side { background: var(--surface); border-right: 1px solid var(--line); padding: 20px 14px; display: flex; flex-direction: column; gap: 24px; position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; }
+.brand { display: flex; gap: 10px; align-items: center; padding-inline: 6px; }
+.brand svg { flex: none; }
+.brand b { font: 700 18px/1.1 var(--f-display); letter-spacing: .01em; display: block; }
+.brand small { color: var(--muted); font-size: 12px; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 6px; color: var(--muted); font-weight: 500; }
+.nav button:hover { background: var(--surface-2); color: var(--ink); }
+.nav button[aria-current="page"] { background: var(--accent-soft); color: var(--ink); }
+.nav button[aria-current="page"] svg { color: var(--accent); }
+.nav button:focus-visible { outline: 2px solid var(--accent); }
+.nav .count { margin-left: auto; font: 500 12px var(--f-mono); background: var(--crit-soft); color: var(--crit); padding: 0 6px; border-radius: 10px; }
+.side-foot { margin-top: auto; font-size: 12px; color: var(--muted); padding-inline: 6px; display: flex; flex-direction: column; gap: 4px; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-right: 6px; vertical-align: 1px; }
+.dot.on { background: var(--ok); }
+
+main { padding-block: 28px 48px; padding-inline: clamp(16px, 3vw, 40px); min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+h1 { font: 700 30px/1.1 var(--f-display); margin: 0; letter-spacing: .005em; text-wrap: balance; }
+h2 { font: 600 18px/1.2 var(--f-display); margin: 0; letter-spacing: .01em; }
+.sub { color: var(--muted); margin: 4px 0 0; }
+.eyebrow { font: 600 11px var(--f-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); padding: 7px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; white-space: nowrap; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.danger { color: var(--crit); }
+.btn.sm { padding: 4px 9px; font-size: 13px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.banner { border: 1px solid var(--line); background: var(--surface-2); border-radius: 8px; padding: 10px 14px; color: var(--muted); }
+.banner.warn { background: var(--warn-soft); border-color: transparent; color: var(--ink); }
+
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; }
+.kpi b { font: 600 30px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.kpi.alert b { color: var(--crit); }
+.kpi span:last-child { color: var(--muted); font-size: 12px; }
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.panel-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.panel-b { padding: 14px 16px; }
+.empty { padding: 28px 16px; text-align: center; color: var(--muted); }
+.empty strong { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+
+.list { list-style: none; margin: 0; padding: 0; }
+.list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); align-items: center; }
+.list li:last-child { border-bottom: 0; }
+.list .t { font-weight: 500; overflow-wrap: anywhere; }
+.list .m { color: var(--muted); font-size: 12px; grid-column: 1; overflow-wrap: anywhere; }
+.list .r { grid-row: 1 / span 2; grid-column: 2; text-align: right; }
+
+.bar { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; border: 1px solid var(--line); }
+.bar i { display: block; height: 100%; background: var(--crit); }
+.bar.warn i { background: var(--warn); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label, .lbl { font-size: 12px; font-weight: 600; color: var(--muted); }
+input[type=text], input[type=number], input[type=search], input[type=datetime-local], select, textarea {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 7px 10px; width: 100%; min-width: 0;
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+textarea { resize: vertical; min-height: 64px; }
+.toolbar input[type=search] { width: auto; flex: 1 1 220px; }
+.toolbar select { width: auto; flex: 0 1 200px; }
+
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 760px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font: 600 11px var(--f-body); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); background: var(--surface-2); position: sticky; top: 0; }
+th.r, td.r { text-align: right; }
+tbody tr:hover { background: var(--surface-2); }
+td .desc { display: block; color: var(--muted); font-size: 12px; }
+tr:last-child td { border-bottom: 0; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.low { background: var(--warn-soft); color: var(--warn); }
+.pill.out { background: var(--crit-soft); color: var(--crit); }
+.chip { display: inline-block; font: 500 11px var(--f-mono); border: 1px solid var(--line); padding: 0 6px; border-radius: 4px; color: var(--muted); white-space: nowrap; }
+.chip.esd { border-color: var(--accent); color: var(--accent); }
+.chip.ex { border-style: dashed; }
+
+.tipo { font-weight: 600; font-size: 12px; white-space: nowrap; }
+.tipo.in { color: var(--ok); }
+.tipo.outp { color: var(--crit); }
+.tipo.adj { color: var(--warn); }
+.delta { font: 500 13px var(--f-mono); font-variant-numeric: tabular-nums; }
+.delta.pos { color: var(--ok); }
+.delta.neg { color: var(--crit); }
+tr.estornado td { opacity: .55; }
+tr.estornado .delta { text-decoration: line-through; }
+
+.form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.form .full { grid-column: 1 / -1; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; font-weight: 500; background: var(--surface); }
+.seg input:checked + label { border-color: var(--accent); background: var(--accent-soft); }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+.saldo-box { border: 1px dashed var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 18px; align-items: baseline; background: var(--surface-2); }
+.saldo-box b { font: 600 22px var(--f-display); font-variant-numeric: tabular-nums; }
+.msg { font-size: 13px; }
+.msg.err { color: var(--crit); }
+.msg.ok { color: var(--ok); }
+.check { display: flex; gap: 8px; align-items: center; }
+
+.overlay { position: fixed; inset: 0; background: rgba(10, 14, 20, .45); display: grid; place-items: center; padding: 16px; z-index: 20; }
+.sheet { background: var(--surface); border-radius: 10px; width: min(640px, 100%); max-height: calc(100% - 32px); overflow: auto; box-shadow: var(--shadow); border: 1px solid var(--line); }
+.sheet .panel-h { position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.confirm { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: var(--crit-soft); padding: 8px 10px; border-radius: 6px; }
+
+.toast { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 8px; z-index: 30; box-shadow: var(--shadow); max-width: calc(100% - 32px); }
+
+@media (max-width: 960px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .side { position: sticky; top: env(safe-area-inset-top, 0px); height: auto; z-index: 10; flex-direction: column; gap: 10px; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .side-foot { display: none; }
+  .nav { flex-direction: row; overflow-x: auto; gap: 4px; }
+  .nav button { padding: 7px 10px; white-space: nowrap; }
+  .nav button svg { display: none; }
+  main { padding-block: 18px 40px; }
+  .form { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .toast { animation: rise .2s ease-out; }
+  @keyframes rise { from { transform: translateY(8px); opacity: 0; } }
+}
+</style>
+
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+        <rect x="7" y="7" width="20" height="20" rx="2" fill="var(--ink)"/>
+        <circle cx="11.5" cy="11.5" r="1.6" fill="var(--accent)"/>
+        <g fill="var(--muted)"><rect x="10" y="2" width="2" height="5"/><rect x="16" y="2" width="2" height="5"/><rect x="22" y="2" width="2" height="5"/><rect x="10" y="27" width="2" height="5"/><rect x="16" y="27" width="2" height="5"/><rect x="22" y="27" width="2" height="5"/><rect x="2" y="10" width="5" height="2"/><rect x="2" y="16" width="5" height="2"/><rect x="2" y="22" width="5" height="2"/><rect x="27" y="10" width="5" height="2"/><rect x="27" y="16" width="5" height="2"/><rect x="27" y="22" width="5" height="2"/></g>
+      </svg>
+      <div><b>Almoxarifado</b><small>Fluxo de materiais eletrônicos</small></div>
+    </div>
+    <nav class="nav" aria-label="Seções">
+      <button data-view="painel" aria-current="page"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="1.5" width="5" height="5"/><rect x="9.5" y="1.5" width="5" height="5"/><rect x="1.5" y="9.5" width="5" height="5"/><rect x="9.5" y="9.5" width="5" height="5"/></svg>Painel <span class="count" id="navAlert" hidden></span></button>
+      <button data-view="estoque"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 4.5 8 1.5l6.5 3v7L8 14.5l-6.5-3z"/><path d="M1.5 4.5 8 7.5l6.5-3M8 7.5v7"/></svg>Estoque</button>
+      <button data-view="movimentar"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5h11l-3-3M14 11H3l3 3"/></svg>Movimentar</button>
+      <button data-view="historico"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 4v4l3 2"/></svg>Histórico</button>
+    </nav>
+    <div class="side-foot">
+      <span id="connState"><span class="dot"></span>Conectando…</span>
+      <span id="todayStr"></span>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div id="modeBanner" class="banner warn" hidden></div>
+
+    <!-- PAINEL -->
+    <section data-section="painel" class="view" style="display:flex;flex-direction:column;gap:20px">
+      <div class="head">
+        <div><h1>Painel</h1><p class="sub">Situação do estoque e últimas movimentações.</p></div>
+        <div class="btn-row writer">
+          <button class="btn" data-action="novo-item">+ Novo item</button>
+          <button class="btn primary" data-goto="movimentar">Registrar movimentação</button>
+        </div>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><span class="eyebrow">Itens cadastrados</span><b id="kItens">0</b><span id="kItensSub">—</span></div>
+        <div class="kpi alert"><span class="eyebrow">Abaixo do mínimo</span><b id="kBaixo">0</b><span id="kBaixoSub">itens precisam de reposição</span></div>
+        <div class="kpi"><span class="eyebrow">Entradas · 7 dias</span><b id="kEnt">0</b><span>unidades recebidas</span></div>
+        <div class="kpi"><span class="eyebrow">Saídas · 7 dias</span><b id="kSai">0</b><span>unidades requisitadas</span></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-h"><h2>Reposição necessária</h2><span class="eyebrow" id="repCount"></span></div>
+          <ul class="list" id="repList"></ul>
+        </div>
+        <div class="panel">
+          <div class="panel-h"><h2>Últimas movimentações</h2><button class="btn sm" data-goto="historico">Ver histórico</button></div>
+          <ul class="list" id="recentList"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ESTOQUE -->
+    <section data-section="estoque" class="view" hidden style="flex-direction:column;gap:16px">
+      <div class="head">
+        <div><h1>Estoque</h1><p class="sub">Saldo calculado a partir de todas as movimentações.</p></div>
+        <div class="btn-row">
+          <button class="btn" data-action="export-estoque" hidden>Exportar CSV</button>
+          <button class="btn primary writer" data-action="novo-item">+ Novo item</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input type="search" id="fBusca" placeholder="Buscar por código, MPN, descrição ou local" aria-label="Buscar">
+        <select id="fCat" aria-label="Categoria"><option value="">Todas as categorias</option></select>
+        <select id="fStatus" aria-label="Situação">
+          <option value="">Qualquer situação</option>
+          <option value="out">Zerado</option>
+          <option value="low">Abaixo do mínimo</option>
+          <option value="ok">Normal</option>
+        </select>
+      </div>
+      <div class="panel">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Código</th><th>Descrição</th><th>Categoria</th><th>Local</th><th class="r">Saldo</th><th class="r">Mín.</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="stockBody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="stockEmpty" hidden></div>
+      </div>
+    </section>
+
+    <!-- MOVIMENTAR -->
+    <section data-section="movimentar" class="view" hidden style="flex-direction:column;gap:16px">
+      <div class="head">
+        <div><h1>Registrar movimentação</h1><p class="sub">Entradas, requisições, devoluções, refugo e ajustes de inventário.</p></div>
+      </div>
+      <div class="panel" style="max-width:780px">
+        <form class="panel-b form" id="movForm" autocomplete="off">
+          <div class="field full">
+            <span class="lbl">Tipo</span>
+            <div class="seg" role="radiogroup" aria-label="Tipo de movimentação">
+              <input type="radio" name="tipo" id="t-entrada" value="entrada" checked><label for="t-entrada">Entrada</label>
+              <input type="radio" name="tipo" id="t-saida" value="saida"><label for="t-saida">Saída / requisição</label>
+              <input type="radio" name="tipo" id="t-devolucao" value="devolucao"><label for="t-devolucao">Devolução</label>
+              <input type="radio" name="tipo" id="t-refugo" value="refugo"><label for="t-refugo">Refugo / perda</label>
+              <input type="radio" name="tipo" id="t-ajuste" value="ajuste"><label for="t-ajuste">Ajuste de inventário</label>
+            </div>
+          </div>
+          <div class="field full">
+            <label for="mItem">Item</label>
+            <select id="mItem" required></select>
+          </div>
+          <div class="saldo-box full" id="saldoBox" hidden>
+            <span><span class="eyebrow">Saldo atual</span><br><b id="sAtual">0</b></span>
+            <span><span class="eyebrow">Após registrar</span><br><b id="sDepois">0</b></span>
+            <span><span class="eyebrow">Local</span><br><span id="sLocal">—</span></span>
+            <span id="sEsd"></span>
+          </div>
+          <div class="field">
+            <label for="mQtd" id="mQtdLbl">Quantidade</label>
+            <input type="number" id="mQtd" min="0" step="any" required inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="mRef" id="mRefLbl">Documento (NF, pedido)</label>
+            <input type="text" id="mRef" placeholder="NF 004512">
+          </div>
+          <div class="field full">
+            <label for="mDest" id="mDestLbl">Fornecedor</label>
+            <input type="text" id="mDest" placeholder="Ex.: Mouser, Digi-Key, Projeto Placa Controle v2">
+          </div>
+          <div class="field full">
+            <label for="mObs">Observação</label>
+            <textarea id="mObs" placeholder="Opcional"></textarea>
+          </div>
+          <div class="full btn-row" style="align-items:center">
+            <button class="btn primary" type="submit" id="mSubmit">Registrar</button>
+            <span class="msg" id="mMsg" role="status"></span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- HISTÓRICO -->
+    <section data-section="historico" class="view" hidden style="flex-direction:column;gap:16px">
+      <div class="head">
+        <div><h1>Histórico</h1><p class="sub">Cada movimentação fica registrada. Erros são corrigidos por estorno, nunca apagados.</p></div>
+        <button class="btn" data-action="export-hist" hidden>Exportar CSV</button>
+      </div>
+      <div class="toolbar">
+        <input type="search" id="hBusca" placeholder="Buscar por código, documento ou destino" aria-label="Buscar no histórico">
+        <select id="hTipo" aria-label="Tipo">
+          <option value="">Todos os tipos</option>
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+          <option value="devolucao">Devolução</option>
+          <option value="refugo">Refugo</option>
+          <option value="ajuste">Ajuste</option>
+          <option value="estorno">Estorno</option>
+        </select>
+        <select id="hPeriodo" aria-label="Período">
+          <option value="7">Últimos 7 dias</option>
+          <option value="30" selected>Últimos 30 dias</option>
+          <option value="90">Últimos 90 dias</option>
+          <option value="0">Tudo</option>
+        </select>
+      </div>
+      <div class="panel">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th class="r">Qtd.</th><th>Documento</th><th>Origem / destino</th><th>Registrado por</th><th></th></tr></thead>
+            <tbody id="histBody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="histEmpty" hidden></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Cadastro de item -->
+<div class="overlay" id="itemOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="itemTitle">
+    <div class="panel-h"><h2 id="itemTitle">Novo item</h2><button class="btn sm" data-action="fechar-item">Fechar</button></div>
+    <form class="panel-b form" id="itemForm" autocomplete="off">
+      <div class="field"><label for="iPn">Código interno</label><input type="text" id="iPn" required placeholder="RES-0603-10K"></div>
+      <div class="field"><label for="iCat">Categoria</label><select id="iCat" required></select></div>
+      <div class="field full"><label for="iDesc">Descrição</label><input type="text" id="iDesc" required placeholder="Resistor 10 kΩ 1% 1/10 W"></div>
+      <div class="field"><label for="iFab">Fabricante</label><input type="text" id="iFab" placeholder="Yageo"></div>
+      <div class="field"><label for="iMpn">MPN (código do fabricante)</label><input type="text" id="iMpn" placeholder="RC0603FR-0710KL"></div>
+      <div class="field"><label for="iEnc">Encapsulamento</label><input type="text" id="iEnc" placeholder="0603, SOIC-8, TO-220…"></div>
+      <div class="field"><label for="iUn">Unidade</label>
+        <select id="iUn"><option value="un">un (peça)</option><option value="m">m (metro)</option><option value="rolo">rolo</option><option value="cx">cx (caixa)</option><option value="kg">kg</option></select>
+      </div>
+      <div class="field"><label for="iLocal">Localização</label><input type="text" id="iLocal" placeholder="Gaveteiro A · gaveta 12"></div>
+      <div class="field"><label for="iMin">Estoque mínimo</label><input type="number" id="iMin" min="0" step="any" value="0"></div>
+      <div class="field full check"><input type="checkbox" id="iEsd"><label for="iEsd" style="font-size:14px;color:var(--ink);font-weight:500">Sensível a ESD (manusear com pulseira e embalagem antiestática)</label></div>
+      <div class="field full" id="iSaldoInicialWrap"><label for="iSaldo">Saldo inicial (gera uma entrada de abertura)</label><input type="number" id="iSaldo" min="0" step="any" value="0"></div>
+      <div class="full btn-row" style="align-items:center;justify-content:space-between">
+        <div class="btn-row" style="align-items:center"><button class="btn primary" type="submit">Salvar item</button><span class="msg" id="iMsg" role="status"></span></div>
+        <div id="iDelWrap"></div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(() => {
+  const CATS = ["Resistor", "Capacitor", "Indutor", "Diodo / LED", "Transistor", "Circuito integrado", "Microcontrolador", "Módulo", "Conector", "Eletromecânico", "Cabo / fio", "PCB", "Consumível", "Outros"];
+  const TIPOS = {
+    entrada:   { nome: "Entrada",   sinal: 1,  cls: "in",   ref: "Documento (NF, pedido)", dest: "Fornecedor", destPh: "Ex.: Mouser, Digi-Key, distribuidor local", qtd: "Quantidade recebida", btn: "Registrar entrada" },
+    saida:     { nome: "Saída",     sinal: -1, cls: "outp", ref: "Ordem de produção / requisição", dest: "Destino (projeto, linha, solicitante)", destPh: "Ex.: OP 2231 · Placa Controle v2", qtd: "Quantidade retirada", btn: "Registrar saída" },
+    devolucao: { nome: "Devolução", sinal: 1,  cls: "in",   ref: "Requisição de origem", dest: "Devolvido por", destPh: "Ex.: Linha SMT 1", qtd: "Quantidade devolvida", btn: "Registrar devolução" },
+    refugo:    { nome: "Refugo",    sinal: -1, cls: "outp", ref: "Laudo / relatório", dest: "Motivo", destPh: "Ex.: dano por ESD, pinos tortos, vencido (MSL)", qtd: "Quantidade descartada", btn: "Registrar refugo" },
+    ajuste:    { nome: "Ajuste",    sinal: 0,  cls: "adj",  ref: "Inventário", dest: "Responsável pela contagem", destPh: "Ex.: Inventário mensal outubro", qtd: "Quantidade contada", btn: "Registrar ajuste" },
+    estorno:   { nome: "Estorno",   sinal: 0,  cls: "adj" }
+  };
+
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const fmtN = n => (Math.round(n * 1000) / 1000).toLocaleString("pt-BR");
+  const fmtD = iso => { const d = new Date(iso); return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" }) + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); };
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const rid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+
+  const S = { items: [], movs: [], saldo: new Map(), db: null, user: null, uid: null, canWrite: true, downloads: null, view: "painel", itemsLoaded: false, movsLoaded: false, editing: null, confirmDel: false, confirmEst: null, profiles: {} };
+
+  /* ---------- store (db quando disponível; memória como alternativa) ---------- */
+  const store = {
+    async addItem(data) {
+      if (S.db) { const ref = S.db.collection("itens").doc(); await ref.set(data); return ref.id; }
+      const id = rid(); S.items.push({ id, ...data }); recompute(); return id;
+    },
+    async updateItem(id, data) {
+      if (S.db) return S.db.doc("itens/" + id).update(data);
+      Object.assign(S.items.find(i => i.id === id), data); recompute();
+    },
+    async deleteItem(id) {
+      if (S.db) return S.db.doc("itens/" + id).delete();
+      S.items = S.items.filter(i => i.id !== id); recompute();
+    },
+    async addMov(data) {
+      if (S.db) return S.db.collection("movimentos").add(data);
+      S.movs.unshift({ id: rid(), ...data }); recompute();
+    },
+    async markEstornado(id, estornoId) {
+      if (S.db) return S.db.doc("movimentos/" + id).update({ estornadoPor: estornoId });
+      S.movs.find(m => m.id === id).estornadoPor = estornoId; recompute();
+    }
+  };
+
+  function recompute() {
+    S.saldo = new Map();
+    for (const m of S.movs) S.saldo.set(m.itemId, (S.saldo.get(m.itemId) || 0) + (Number(m.delta) || 0));
+    render();
+  }
+  const itemById = id => S.items.find(i => i.id === id);
+  const saldoOf = id => S.saldo.get(id) || 0;
+  function status(it) {
+    const s = saldoOf(it.id), min = Number(it.minimo) || 0;
+    if (s <= 0) return "out";
+    if (min > 0 && s < min) return "low";
+    return "ok";
+  }
+  const STATUS_TXT = { out: "Zerado", low: "Abaixo do mínimo", ok: "Normal" };
+  const sortedItems = () => [...S.items].sort((a, b) => String(a.pn).localeCompare(String(b.pn), "pt-BR"));
+
+  /* ---------- navegação ---------- */
+  function go(view) {
+    S.view = view;
+    $$(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.view === view ? "page" : "false"));
+    $$(".view").forEach(s => { const on = s.dataset.section === view; s.hidden = !on; s.style.display = on ? "flex" : ""; });
+    try { localStorage.setItem("alm.view", view); } catch (e) {}
+    window.scrollTo(0, 0);
+    render();
+  }
+  document.addEventListener("click", e => {
+    const nav = e.target.closest("[data-view]"); if (nav) return go(nav.dataset.view);
+    const g = e.target.closest("[data-goto]"); if (g) return go(g.dataset.goto);
+    const a = e.target.closest("[data-action]"); if (!a) return;
+    const act = a.dataset.action, id = a.dataset.id;
+    if (act === "novo-item") openItem(null);
+    else if (act === "editar-item") openItem(id);
+    else if (act === "fechar-item") closeItem();
+    else if (act === "mov-item") { go("movimentar"); $("#mItem").value = id; updateSaldoBox(); $("#mQtd").focus(); }
+    else if (act === "del-ask") { S.confirmDel = true; renderDel(); }
+    else if (act === "del-cancel") { S.confirmDel = false; renderDel(); }
+    else if (act === "del-ok") doDelete();
+    else if (act === "est-ask") { S.confirmEst = id; renderHist(); }
+    else if (act === "est-cancel") { S.confirmEst = null; renderHist(); }
+    else if (act === "est-ok") doEstorno(id);
+    else if (act === "export-estoque") exportEstoque();
+    else if (act === "export-hist") exportHist();
+  });
+  $("#itemOverlay").addEventListener("click", e => { if (e.target.id === "itemOverlay") closeItem(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#itemOverlay").hidden) closeItem(); });
+
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast._t); toast._t = setTimeout(() => (t.hidden = true), 2600);
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    const low = S.items.filter(i => status(i) !== "ok");
+    const na = $("#navAlert"); na.hidden = !low.length; na.textContent = low.length;
+    $$(".writer").forEach(el => (el.hidden = !S.canWrite));
+    if (S.view === "painel") renderPainel(low);
+    if (S.view === "estoque") renderEstoque();
+    if (S.view === "movimentar") renderMovForm();
+    if (S.view === "historico") renderHist();
+  }
+
+  function loadingOrEmpty(kind) {
+    if (S.db && !(S.itemsLoaded && S.movsLoaded)) return '<div class="empty">Carregando dados…</div>';
+    return "";
+  }
+
+  function renderPainel(low) {
+    const ex = S.items.filter(i => i.exemplo).length;
+    $("#kItens").textContent = fmtN(S.items.length);
+    $("#kItensSub").textContent = S.items.length ? `${new Set(S.items.map(i => i.categoria)).size} categorias` + (ex ? ` · ${ex} de exemplo` : "") : "nenhum ainda";
+    $("#kBaixo").textContent = fmtN(low.length);
+    $("#kBaixoSub").textContent = low.filter(i => status(i) === "out").length + " zerados";
+    const since = Date.now() - 7 * 864e5;
+    let ent = 0, sai = 0;
+    for (const m of S.movs) {
+      if (new Date(m.data).getTime() < since || m.tipo === "ajuste" || m.tipo === "estorno" || m.estornadoPor) continue;
+      if (m.tipo === "entrada") ent += Number(m.qtd) || 0;
+      if (m.tipo === "saida") sai += Number(m.qtd) || 0;
+    }
+    $("#kEnt").textContent = fmtN(ent); $("#kSai").textContent = fmtN(sai);
+
+    const rep = $("#repList");
+    $("#repCount").textContent = low.length ? low.length + " itens" : "";
+    const lo = loadingOrEmpty();
+    if (lo) { rep.innerHTML = lo; $("#recentList").innerHTML = lo; return; }
+    if (!S.items.length) {
+      rep.innerHTML = `<li style="display:block"><div class="empty"><strong>Nenhum item cadastrado</strong>Cadastre resistores, CIs, conectores e outros componentes em <em>+ Novo item</em>.</div></li>`;
+    } else if (!low.length) {
+      rep.innerHTML = `<li style="display:block"><div class="empty"><strong>Tudo dentro do mínimo</strong>Nenhum item precisa de reposição agora.</div></li>`;
+    } else {
+      rep.innerHTML = low.sort((a, b) => (saldoOf(a.id) / (a.minimo || 1)) - (saldoOf(b.id) / (b.minimo || 1))).slice(0, 8).map(it => {
+        const s = saldoOf(it.id), min = Number(it.minimo) || 0, st = status(it);
+        const pct = min ? Math.max(0, Math.min(100, (s / min) * 100)) : 0;
+        return `<li>
+          <span class="t"><span class="mono">${esc(it.pn)}</span> · ${esc(it.descricao)}</span>
+          <span class="m"><span class="bar ${st === "low" ? "warn" : ""}" style="display:block;max-width:220px;margin-top:4px"><i style="width:${pct}%"></i></span></span>
+          <span class="r"><span class="num delta">${fmtN(s)}</span> <span class="m">/ ${fmtN(min)} ${esc(it.unidade || "un")}</span><br><span class="pill ${st}">${STATUS_TXT[st]}</span></span>
+        </li>`;
+      }).join("");
+    }
+    const rec = $("#recentList");
+    if (!S.movs.length) {
+      rec.innerHTML = `<li style="display:block"><div class="empty"><strong>Sem movimentações</strong>Registre a primeira entrada em <em>Movimentar</em>.</div></li>`;
+    } else {
+      rec.innerHTML = S.movs.slice(0, 8).map(m => {
+        const it = itemById(m.itemId); const T = TIPOS[m.tipo] || TIPOS.ajuste;
+        const d = Number(m.delta) || 0;
+        return `<li>
+          <span class="t"><span class="tipo ${T.cls}">${T.nome}</span> · <span class="mono">${esc(it ? it.pn : m.pn || "item removido")}</span></span>
+          <span class="m">${fmtD(m.data)}${m.destino ? " · " + esc(m.destino) : ""}${m.ref ? " · " + esc(m.ref) : ""}</span>
+          <span class="r delta ${d > 0 ? "pos" : d < 0 ? "neg" : ""}">${d > 0 ? "+" : ""}${fmtN(d)}</span>
+        </li>`;
+      }).join("");
+    }
+  }
+
+  function renderEstoque() {
+    const cs = $("#fCat");
+    if (cs.options.length <= 1) CATS.forEach(c => cs.add(new Option(c, c)));
+    const q = $("#fBusca").value.trim().toLowerCase(), cat = cs.value, st = $("#fStatus").value;
+    const rows = sortedItems().filter(it => {
+      if (cat && it.categoria !== cat) return false;
+      if (st && status(it) !== st) return false;
+      if (q && ![it.pn, it.mpn, it.descricao, it.local, it.fabricante, it.encapsulamento].join(" ").toLowerCase().includes(q)) return false;
+      return true;
+    });
+    const body = $("#stockBody"), em = $("#stockEmpty");
+    const lo = loadingOrEmpty();
+    if (lo) { body.innerHTML = ""; em.hidden = false; em.innerHTML = "Carregando dados…"; return; }
+    if (!rows.length) {
+      body.innerHTML = ""; em.hidden = false;
+      em.innerHTML = S.items.length ? "<strong>Nenhum item corresponde ao filtro</strong>Limpe a busca ou escolha outra categoria." : "<strong>Nenhum item cadastrado</strong>Use <em>+ Novo item</em> para cadastrar o primeiro componente.";
+      return;
+    }
+    em.hidden = true;
+    body.innerHTML = rows.map(it => {
+      const s = status(it);
+      return `<tr>
+        <td><span class="mono">${esc(it.pn)}</span>${it.exemplo ? ' <span class="chip ex" title="Registro de exemplo">exemplo</span>' : ""}</td>
+        <td style="min-width:220px">${esc(it.descricao)}<span class="desc">${[it.fabricante, it.mpn].filter(Boolean).map(esc).join(" · ")}</span></td>
+        <td>${esc(it.categoria)}${it.encapsulamento ? ` <span class="chip">${esc(it.encapsulamento)}</span>` : ""}${it.esd ? ' <span class="chip esd" title="Sensível a descarga eletrostática">ESD</span>' : ""}</td>
+        <td>${esc(it.local || "—")}</td>
+        <td class="r num"><b>${fmtN(saldoOf(it.id))}</b> <span class="desc" style="display:inline">${esc(it.unidade || "un")}</span></td>
+        <td class="r num">${fmtN(Number(it.minimo) || 0)}</td>
+        <td><span class="pill ${s}">${STATUS_TXT[s]}</span></td>
+        <td class="r" style="white-space:nowrap">${S.canWrite ? `<button class="btn sm" data-action="mov-item" data-id="${it.id}">Movimentar</button> <button class="btn sm" data-action="editar-item" data-id="${it.id}">Editar</button>` : ""}</td>
+      </tr>`;
+    }).join("");
+  }
+  ["#fBusca", "#fCat", "#fStatus"].forEach(s => $(s).addEventListener("input", renderEstoque));
+
+  /* ---------- formulário de movimentação ---------- */
+  const tipoAtual = () => $("input[name=tipo]:checked").value;
+  function renderMovForm() {
+    const sel = $("#mItem"), cur = sel.value;
+    const opts = sortedItems();
+    sel.innerHTML = `<option value="">${opts.length ? "Selecione o item…" : "Cadastre um item primeiro"}</option>` +
+      opts.map(it => `<option value="${it.id}">${esc(it.pn)} — ${esc(it.descricao)}</option>`).join("");
+    if (cur && itemById(cur)) sel.value = cur;
+    const T = TIPOS[tipoAtual()];
+    $("#mQtdLbl").textContent = T.qtd; $("#mRefLbl").textContent = T.ref; $("#mDestLbl").textContent = T.dest;
+    $("#mDest").placeholder = T.destPh; $("#mSubmit").textContent = T.btn;
+    $("#mSubmit").disabled = !S.canWrite;
+    updateSaldoBox();
+  }
+  function calcDelta() {
+    const id = $("#mItem").value, q = parseFloat($("#mQtd").value);
+    if (!id || isNaN(q)) return null;
+    const t = tipoAtual();
+    return t === "ajuste" ? q - saldoOf(id) : TIPOS[t].sinal * q;
+  }
+  function updateSaldoBox() {
+    const id = $("#mItem").value, box = $("#saldoBox");
+    if (!id) { box.hidden = true; return; }
+    const it = itemById(id); if (!it) { box.hidden = true; return; }
+    box.hidden = false;
+    const s = saldoOf(id), d = calcDelta();
+    const un = " " + (it.unidade || "un");
+    $("#sAtual").textContent = fmtN(s) + un;
+    const after = d == null ? s : s + d;
+    $("#sDepois").textContent = fmtN(after) + un;
+    $("#sDepois").style.color = after < 0 ? "var(--crit)" : (Number(it.minimo) && after < it.minimo ? "var(--warn)" : "");
+    $("#sLocal").textContent = it.local || "—";
+    $("#sEsd").innerHTML = it.esd ? '<span class="chip esd">ESD · use pulseira e embalagem antiestática</span>' : "";
+  }
+  $$("input[name=tipo]").forEach(r => r.addEventListener("change", () => { $("#mMsg").textContent = ""; renderMovForm(); }));
+  $("#mItem").addEventListener("change", updateSaldoBox);
+  $("#mQtd").addEventListener("input", updateSaldoBox);
+
+  $("#movForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const msg = $("#mMsg"); msg.className = "msg err";
+    const id = $("#mItem").value, it = itemById(id), t = tipoAtual();
+    const q = parseFloat($("#mQtd").value);
+    if (!it) { msg.textContent = "Escolha o item."; return; }
+    if (isNaN(q) || q < 0 || (t !== "ajuste" && q === 0)) { msg.textContent = "Informe uma quantidade maior que zero."; return; }
+    const delta = calcDelta();
+    if (t === "ajuste" && delta === 0) { msg.textContent = "A contagem bate com o saldo; nenhum ajuste é necessário."; return; }
+    if (saldoOf(id) + delta < 0) { msg.textContent = `Saldo insuficiente: há ${fmtN(saldoOf(id))} ${it.unidade || "un"} de ${it.pn}.`; return; }
+    const btn = $("#mSubmit"); btn.disabled = true;
+    try {
+      await store.addMov({
+        tipo: t, itemId: id, pn: it.pn, qtd: t === "ajuste" ? Math.abs(delta) : q, delta,
+        contado: t === "ajuste" ? q : null,
+        ref: $("#mRef").value.trim(), destino: $("#mDest").value.trim(), obs: $("#mObs").value.trim(),
+        data: new Date().toISOString(), por: S.uid || null
+      });
+      msg.className = "msg ok";
+      msg.textContent = `${TIPOS[t].nome} registrada: ${delta > 0 ? "+" : ""}${fmtN(delta)} ${it.unidade || "un"} em ${it.pn}.`;
+      $("#mQtd").value = ""; $("#mObs").value = "";
+      updateSaldoBox();
+    } catch (err) { msg.textContent = errText(err); }
+    btn.disabled = false;
+  });
+
+  function errText(err) {
+    const c = err && err.code;
+    if (c === "invalid_argument") return "Você não tem permissão para alterar estes dados. Peça acesso de Colaborador ao dono da página.";
+    if (c === "quota_exceeded") return "O banco de dados está cheio. Exporte o histórico e remova registros antigos.";
+    if (c === "resource_exhausted") return "Muitas operações seguidas. Aguarde alguns segundos e tente de novo.";
+    return "Não foi possível salvar agora. Verifique a conexão e tente de novo.";
+  }
+
+  /* ---------- histórico ---------- */
+  ["#hBusca", "#hTipo", "#hPeriodo"].forEach(s => $(s).addEventListener("input", renderHist));
+  function filteredHist() {
+    const q = $("#hBusca").value.trim().toLowerCase(), t = $("#hTipo").value, p = Number($("#hPeriodo").value);
+    const since = p ? Date.now() - p * 864e5 : 0;
+    return S.movs.filter(m => {
+      if (since && new Date(m.data).getTime() < since) return false;
+      if (t && m.tipo !== t) return false;
+      if (q) { const it = itemById(m.itemId); if (![m.pn, it && it.descricao, m.ref, m.destino, m.obs].join(" ").toLowerCase().includes(q)) return false; }
+      return true;
+    });
+  }
+  async function renderHist() {
+    const rows = filteredHist(), body = $("#histBody"), em = $("#histEmpty");
+    if (loadingOrEmpty()) { body.innerHTML = ""; em.hidden = false; em.textContent = "Carregando dados…"; return; }
+    if (!rows.length) {
+      body.innerHTML = ""; em.hidden = false;
+      em.innerHTML = S.movs.length ? "<strong>Nada neste filtro</strong>Amplie o período ou limpe a busca." : "<strong>Nenhuma movimentação registrada</strong>Entradas, saídas e ajustes aparecem aqui assim que forem lançados.";
+      return;
+    }
+    em.hidden = true;
+    body.innerHTML = rows.slice(0, 500).map(m => {
+      const it = itemById(m.itemId), T = TIPOS[m.tipo] || TIPOS.ajuste, d = Number(m.delta) || 0;
+      let act = "";
+      if (S.canWrite && m.tipo !== "estorno" && !m.estornadoPor) {
+        act = S.confirmEst === m.id
+          ? `<span class="confirm"><span>Estornar ${d > 0 ? "+" : ""}${fmtN(d)}?</span><button class="btn sm danger" data-action="est-ok" data-id="${m.id}">Estornar</button><button class="btn sm" data-action="est-cancel">Cancelar</button></span>`
+          : `<button class="btn sm" data-action="est-ask" data-id="${m.id}">Estornar</button>`;
+      } else if (m.estornadoPor) act = '<span class="chip">estornado</span>';
+      const extra = m.tipo === "ajuste" && m.contado != null ? ` <span class="desc">contado ${fmtN(m.contado)}</span>` : "";
+      return `<tr class="${m.estornadoPor ? "estornado" : ""}">
+        <td class="num" style="white-space:nowrap">${fmtD(m.data)}</td>
+        <td><span class="tipo ${T.cls}">${T.nome}</span>${m.exemplo ? ' <span class="chip ex">exemplo</span>' : ""}</td>
+        <td><span class="mono">${esc(it ? it.pn : m.pn)}</span><span class="desc">${esc(it ? it.descricao : "item removido")}</span></td>
+        <td class="r"><span class="delta ${d > 0 ? "pos" : d < 0 ? "neg" : ""}">${d > 0 ? "+" : ""}${fmtN(d)}</span>${extra}</td>
+        <td>${esc(m.ref || "—")}</td>
+        <td style="min-width:160px">${esc(m.destino || "—")}${m.obs ? `<span class="desc">${esc(m.obs)}</span>` : ""}</td>
+        <td data-uid="${esc(m.por || "")}">${m.por ? "…" : "—"}</td>
+        <td class="r" style="white-space:nowrap">${act}</td>
+      </tr>`;
+    }).join("");
+    const ids = [...new Set(rows.slice(0, 500).map(m => m.por).filter(Boolean))];
+    if (S.user && ids.length) {
+      const ps = await S.user.profiles(ids);
+      $$("#histBody td[data-uid]").forEach(td => { const p = ps[td.dataset.uid]; if (p) td.textContent = p.isMe ? "Você" : (p.name || "Alguém da equipe"); });
+    }
+  }
+
+  async function doEstorno(id) {
+    const m = S.movs.find(x => x.id === id); if (!m) return;
+    const d = -(Number(m.delta) || 0);
+    if (saldoOf(m.itemId) + d < 0) { toast("Estorno deixaria o saldo negativo. Registre um ajuste de inventário."); return; }
+    try {
+      const estId = rid();
+      await store.addMov({ tipo: "estorno", itemId: m.itemId, pn: m.pn, qtd: Math.abs(d), delta: d, ref: "Estorno de " + (TIPOS[m.tipo]?.nome || m.tipo).toLowerCase() + " de " + fmtD(m.data), destino: m.destino || "", obs: "", data: new Date().toISOString(), por: S.uid || null, estornoDe: m.id, estornoKey: estId });
+      await store.markEstornado(m.id, estId);
+      S.confirmEst = null; toast("Movimentação estornada."); render();
+    } catch (err) { toast(errText(err)); }
+  }
+
+  /* ---------- cadastro de item ---------- */
+  function openItem(id) {
+    const cs = $("#iCat");
+    if (!cs.options.length) CATS.forEach(c => cs.add(new Option(c, c)));
+    S.editing = id; S.confirmDel = false;
+    const it = id ? itemById(id) : {};
+    $("#itemTitle").textContent = id ? "Editar " + it.pn : "Novo item";
+    $("#iPn").value = it.pn || ""; $("#iCat").value = it.categoria || CATS[0]; $("#iDesc").value = it.descricao || "";
+    $("#iFab").value = it.fabricante || ""; $("#iMpn").value = it.mpn || ""; $("#iEnc").value = it.encapsulamento || "";
+    $("#iUn").value = it.unidade || "un"; $("#iLocal").value = it.local || ""; $("#iMin").value = it.minimo ?? 0;
+    $("#iEsd").checked = !!it.esd; $("#iSaldo").value = 0;
+    $("#iSaldoInicialWrap").hidden = !!id; $("#iMsg").textContent = "";
+    renderDel();
+    $("#itemOverlay").hidden = false; $("#iPn").focus();
+  }
+  function closeItem() { $("#itemOverlay").hidden = true; S.editing = null; }
+  function renderDel() {
+    const w = $("#iDelWrap");
+    if (!S.editing) { w.innerHTML = ""; return; }
+    const s = saldoOf(S.editing);
+    w.innerHTML = S.confirmDel
+      ? (s !== 0 ? `<span class="confirm">Zere o saldo (${fmtN(s)}) com um ajuste antes de excluir. <button type="button" class="btn sm" data-action="del-cancel">Entendi</button></span>`
+                 : `<span class="confirm">Excluir este item? O histórico é mantido. <button type="button" class="btn sm danger" data-action="del-ok">Excluir</button><button type="button" class="btn sm" data-action="del-cancel">Cancelar</button></span>`)
+      : `<button type="button" class="btn sm danger" data-action="del-ask">Excluir item</button>`;
+  }
+  async function doDelete() {
+    try { await store.deleteItem(S.editing); closeItem(); toast("Item excluído."); } catch (err) { $("#iMsg").className = "msg err"; $("#iMsg").textContent = errText(err); }
+  }
+  $("#itemForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const msg = $("#iMsg"); msg.className = "msg err";
+    const pn = $("#iPn").value.trim().toUpperCase();
+    if (S.items.some(i => i.pn.toUpperCase() === pn && i.id !== S.editing)) { msg.textContent = `Já existe um item com o código ${pn}.`; return; }
+    const data = {
+      pn, categoria: $("#iCat").value, descricao: $("#iDesc").value.trim(), fabricante: $("#iFab").value.trim(),
+      mpn: $("#iMpn").value.trim(), encapsulamento: $("#iEnc").value.trim(), unidade: $("#iUn").value,
+      local: $("#iLocal").value.trim(), minimo: Math.max(0, parseFloat($("#iMin").value) || 0), esd: $("#iEsd").checked
+    };
+    try {
+      if (S.editing) { await store.updateItem(S.editing, data); toast("Item atualizado."); }
+      else {
+        const id = await store.addItem({ ...data, criadoEm: new Date().toISOString() });
+        const ini = parseFloat($("#iSaldo").value) || 0;
+        if (ini > 0) await store.addMov({ tipo: "ajuste", itemId: id, pn, qtd: ini, delta: ini, contado: ini, ref: "Saldo inicial", destino: "", obs: "", data: new Date().toISOString(), por: S.uid || null });
+        toast(`${pn} cadastrado.`);
+      }
+      closeItem();
+    } catch (err) { msg.textContent = errText(err); }
+  });
+
+  /* ---------- exportação ---------- */
+  const csv = rows => "﻿" + rows.map(r => r.map(v => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(";")).join("\r\n");
+  async function save(name, data) {
+    try { await S.downloads.save({ filename: name, data }); toast("Arquivo salvo."); }
+    catch (err) { if (err && err.code !== "declined") toast("Não foi possível gerar o arquivo aqui."); }
+  }
+  function exportEstoque() {
+    const r = [["Código", "Descrição", "Categoria", "Fabricante", "MPN", "Encapsulamento", "Local", "Unidade", "Saldo", "Mínimo", "Situação", "ESD"]];
+    sortedItems().forEach(it => r.push([it.pn, it.descricao, it.categoria, it.fabricante, it.mpn, it.encapsulamento, it.local, it.unidade, fmtN(saldoOf(it.id)), fmtN(it.minimo || 0), STATUS_TXT[status(it)], it.esd ? "sim" : "não"]));
+    save(`estoque-${new Date().toISOString().slice(0, 10)}.csv`, csv(r));
+  }
+  function exportHist() {
+    const r = [["Data", "Tipo", "Código", "Quantidade (±)", "Documento", "Origem/destino", "Observação", "Estornado"]];
+    filteredHist().forEach(m => r.push([fmtD(m.data), (TIPOS[m.tipo] || {}).nome || m.tipo, m.pn, fmtN(m.delta), m.ref, m.destino, m.obs, m.estornadoPor ? "sim" : ""]));
+    save(`movimentacoes-${new Date().toISOString().slice(0, 10)}.csv`, csv(r));
+  }
+
+  /* ---------- inicialização ---------- */
+  $("#todayStr").textContent = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  let start = "painel"; try { start = localStorage.getItem("alm.view") || "painel"; } catch (e) {}
+  go(["painel", "estoque", "movimentar", "historico"].includes(start) ? start : "painel");
+
+  async function boot() {
+    const c = window.claude;
+    const [db, user, dl] = c ? await Promise.all([c.use("db"), c.use("user"), c.use("downloads")]) : [null, null, null];
+    S.user = user; S.downloads = dl;
+    if (dl) $$("[data-action^=export]").forEach(b => (b.hidden = false));
+    if (!db) {
+      S.itemsLoaded = S.movsLoaded = true;
+      $("#modeBanner").hidden = false;
+      $("#modeBanner").textContent = "Modo local: o banco de dados compartilhado não está disponível nesta visualização. Você pode testar, mas nada será salvo ao fechar a página.";
+      $("#connState").innerHTML = '<span class="dot"></span>Modo local (não salva)';
+      render(); return;
+    }
+    S.db = db;
+    if (user) {
+      S.uid = await user.id();
+      const can = await user.can("data.write");
+      if (can === false) {
+        S.canWrite = false;
+        $("#modeBanner").hidden = false; $("#modeBanner").className = "banner";
+        $("#modeBanner").textContent = "Somente leitura: você pode consultar o estoque e o histórico. Para registrar movimentações, peça acesso de Colaborador.";
+      }
+    }
+    $("#connState").innerHTML = '<span class="dot on"></span>Sincronizado com a equipe';
+    db.collection("itens").onSnapshot(s => { S.items = s.docs.map(d => ({ id: d.id, ...d.data() })); S.itemsLoaded = true; recompute(); }, onErr);
+    db.collection("movimentos").orderBy("data", "desc").onSnapshot(s => { S.movs = s.docs.map(d => ({ id: d.id, ...d.data() })); S.movsLoaded = true; recompute(); }, onErr);
+  }
+  function onErr() { $("#connState").innerHTML = '<span class="dot"></span>Sem conexão com os dados'; }
+  boot();
+})();
+</script>
+
+</body></html>
